@@ -11,3 +11,8 @@ Key Features of Lambda
 • Provisioning done by AWS and Pay as you use
 • Bring your code and run on Lambda
 • Lambda is a serverless, event-driven compute service
+
+Use Case for AWS Lambda
+
+• Event Driven
+• Unpredictable demand
