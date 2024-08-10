@@ -16,3 +16,13 @@ Use Case for AWS Lambda
 
 • Event Driven
 • Unpredictable demand
+
+AWS Lambda Execution Role
+
+• A Lambda function's execution role is an AWS Identity and Access Management (IAM) role that grants the function 
+permission to access AWS services and resources. 
+• Default Lambda Function Role Permissions :
+• AWSLambdaBasicExecutionRole : AWSLambdaBasicExecutionRole grants permissions to upload logs to CloudWatch.
+• Need to provide an execution role when a function is created. Invoke your function, Lambda automatically provides your 
+function with temporary credentials by assuming this role.
+
