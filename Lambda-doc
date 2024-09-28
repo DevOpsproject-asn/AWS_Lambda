@@ -1,0 +1,318 @@
+Lambda sevice for AWS:
+-------------------------
+Refer URL : https://www.simform.com/blog/serverless-examples-aws-lambda-use-cases/
+
+AWS Lambda is a compute service that lets you run code without provisioning or managing servers.
+
+Lambda runs your code on a high-availability compute infrastructure and performs all of the administration of the compute resources,
+ including server and operating system maintenance, capacity provisioning and automatic scaling, and logging.
+
+ customize the cost 
+ notification to team to resource uses.
+ 
+ Some of the use cases are Serverless Website | App Authentication | Mass Emailing | Real-time Data Transformation | CRON Jobs | Chatbot | IoT
+ It has “Pay as you go” model whose billing is based on used memory, number of request and execution duration rounded up to nearest 100 milliseconds.
+ 
+ #1. Serverless Website Example with AWS Lambda
+   Maintaining a dedicated server is outdated, in fact, even a virtual server. 
+   Not only it’s tiresome but provisioning the instances, updating the OS, etc. 
+   takes a lot of time and distracts you from focusing on the core functionalities.
+ #2. Serverless Authentication Example Using AWS Cognito
+ The following are the common triggering sources from where you can hook your Lambda function:
+
+      > Sign-up, confirmation and sign-in
+      > Pre and post authentication
+      > Custom authentication challenge
+      > Pre token generation
+      > Migrate user
+      > Custom message
+    Amazon Cognito will trigger your Lambda function before sending an email or phone verification text or multi-factor authentication which allows 
+	you to customize the message as per the requirements. The triggering source for the custom message are:
+
+     > Confirmation code post-sign-up
+     > Temporary password for new users
+     > Resending confirmation code
+     > Confirmation code to forget password request
+     > Manual request for new email/phone
+     > Multi-factor authentication
+ #3. AWS Lambda Use Case for Multi-Location Media Transformation
+     > Resizing image based on the query parameter
+     > Serving appropriate file format based on browser characteristics, for example, WebP for Chrome/Android browsers and JPEG for the rest
+     > Defining whitelist of dimensions to be generated
+ Here’s more you can do with Lambda@Edge:
+
+     > Inspect cookies and rewrite URLs to perform A/B testing.
+     > Send specific objects to your users based on the User-Agent header.
+     > Implement access control by looking for specific headers before passing requests to the origin.
+     > Add, drop, or modify headers to direct users to different cached objects.
+     > Generate new HTTP responses.
+     > Cleanly support legacy URLs.
+     > Modify or condense headers or URLs to improve cache utilization.
+     > Make HTTP requests to other Internet resources and use the results to customize responses.
+ #4. Mass Emailing using AWS Lambda & SES (  Simple Email Service)
+    With AWS Lambda and Simple Email Service SES, you can build a cost-effective and in-house serverless email platform. 
+	Along with S3 (where your mailing list will be stored) you can quickly send HTML or text-based emails to a large number of recipients.
+	
+ #5. AWS Lambda Use Case for Real-time Data Transformation
+    Amazon Kinesis Firehose is basically used for writing real-time streaming data to Amazon S3, Redshift or Elasticsearch. 
+	But business requirements have changed over the time.
+     > Normalize the data acquired from different touchpoints
+     > Adding metadata to the recorded data
+     > Converting or restructuring the data as per the destination prerequisites
+     > Performing ETL functionality
+     > Combine data from another data source
+	 
+	 To help you get started with this functionality, AWS provides you with predefined Lambda blueprints in the following format.
+
+      > Syslog to JSON
+      > Syslog to CSV
+      > Apache Log to JSON
+      > Apache Log to CSV
+      > General Firehose Processing
+ #6. Serverless CRON Jobs Example
+      > If you are running a membership site where accounts have an expiration date, you can schedule a cron job to regularly deactivate the expired account
+      > Sending out the newsletter on fixed timings
+      > Cleaning up the database cache on the regular interval
+ #7. AWS Lambda Use Case for Efficient Monitoring
+     > Alarm Threshold Breaches: Let’s imagine where your CPU is running beyond its specified limits or you’re seeing more/ fewer events than 
+	   what you’re expecting, CloudWatch can trigger a Lambda function for you which will notify the team through an email or terminate the 
+	   underperforming resources.
+     > Cloudwatch Logs: To monitor the incoming CloudWatch logs in realtime, by integrating it with a function which will keep track of any anomaly 
+	   and notify the team if detected or you can program it to write these logs to your database for a backup.
+ #8. Real-time Notifications with AWS Lambda & SNS
+      example is to receive your infrastructural alerts as a Slack notification. 
+	  Whenever a CloudWatch alarms trigger,it will send a message to the SNS topic. 
+	  Upon receiving the message, SNS topic will invoke a Lambda function which will call the Slack API to post a message to Slack channel.
+      
+ #9. AWS Lambda Use Case for Building Serverless Chatbot
+     > Enter your code logic to the Lambda function.
+     > Set up your code to trigger when user commands are sent to the bot. The commands are API requests (from Slack, Messenger, etc) routed through API Gateway to Lambda function.
+     > Lambda runs only when it is commanded and hence using the resources when needed. You pay for the time it runs your code.
+ #10. Serverless IoT Backend
+------------------------------------
+import boto3
+
+def lambda_handler(event, context):
+    ec2 = boto3.client('ec2')
+
+    # Get all EBS snapshots
+    response = ec2.describe_snapshots(OwnerIds=['self'])
+
+    # Get all active EC2 instance IDs
+    instances_response = ec2.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    active_instance_ids = set()
+
+    for reservation in instances_response['Reservations']:
+        for instance in reservation['Instances']:
+            active_instance_ids.add(instance['InstanceId'])
+
+    # Iterate through each snapshot and delete if it's not attached to any volume or the volume is not attached to a running instance
+    for snapshot in response['Snapshots']:
+        snapshot_id = snapshot['SnapshotId']
+        volume_id = snapshot.get('VolumeId')
+
+        if not volume_id:
+            # Delete the snapshot if it's not attached to any volume
+            ec2.delete_snapshot(SnapshotId=snapshot_id)
+-------------------------------------------------------------
+
+import boto3
+from datetime import datetime, timedelta
+
+def lambda_handler(event, context):
+    # Set the AWS region
+    region = 'your-region'  # replace with your AWS region, e.g., 'us-east-1'
+
+    # Set the S3 bucket name
+    s3_bucket_name = 'your-s3-bucket'  # replace with your S3 bucket name
+
+    # Set the DynamoDB table name
+    dynamodb_table_name = 'your-dynamodb-table'  # replace with your DynamoDB table name
+
+    # Set the retention period for S3 objects (in days)
+    s3_retention_days = 30  # adjust as needed
+
+    # Set the retention period for DynamoDB items (in days)
+    dynamodb_retention_days = 30  # adjust as needed
+
+    # Create an S3 client
+    s3 = boto3.client('s3', region_name=region)
+
+    # Create a DynamoDB client
+    dynamodb = boto3.client('dynamodb', region_name=region)
+
+    # Delete old objects from S3 bucket
+    delete_old_s3_objects(s3, s3_bucket_name, s3_retention_days)
+
+    # Delete expired items from DynamoDB table
+    delete_expired_dynamodb_items(dynamodb, dynamodb_table_name, dynamodb_retention_days)
+
+    return {
+        'statusCode': 200,
+        'body': 'Backend cleanup completed successfully'
+    }
+
+def delete_old_s3_objects(s3, bucket_name, retention_days):
+    cutoff_date = datetime.now() - timedelta(days=retention_days)
+
+    # List objects in the S3 bucket
+    objects = s3.list_objects_v2(Bucket=bucket_name).get('Contents', [])
+
+    # Delete objects older than the retention period
+    for obj in objects:
+        last_modified = obj['LastModified']
+        if last_modified < cutoff_date:
+            s3.delete_object(Bucket=bucket_name, Key=obj['Key'])
+
+def delete_expired_dynamodb_items(dynamodb, table_name, retention_days):
+    cutoff_date = (datetime.now() - timedelta(days=retention_days)).isoformat()
+
+    # Scan DynamoDB table for items older than the retention period
+    response = dynamodb.scan(
+        TableName=table_name,
+        FilterExpression="timestamp < :cutoff_date",
+        ExpressionAttributeValues={":cutoff_date": {"S": cutoff_date}},
+    )
+
+    # Delete expired items
+    items = response.get('Items', [])
+    for item in items:
+        key = item['YourPrimaryKey']['S']  # replace with your primary key
+        dynamodb.delete_item(TableName=table_name, Key={'YourPrimaryKey': {'S': key}})
+
+# Uncomment the line below if you want to test the function locally
+# print(lambda_handler(None, None))
+
+
+
+ 
+const AWS = require('aws-sdk');
+
+exports.handler = async (event, context) => {
+  // Set the AWS region
+  const region = 'your-region'; // replace with your AWS region, e.g., 'us-east-1'
+
+  // Set the S3 bucket name
+  const bucketName = 'your-bucket-name'; // replace with your desired bucket name
+
+  // Create S3 service object
+  const s3 = new AWS.S3({ region });
+
+  // Configure parameters for the S3 bucket
+  const params = {
+    Bucket: bucketName,
+    ACL: 'private', // You can set the access control level as needed
+  };
+
+  try {
+    // Create the S3 bucket
+    const createBucketResponse = await s3.createBucket(params).promise();
+    console.log('Bucket created:', createBucketResponse.Location);
+
+    // You can add more logic or perform additional tasks here
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify('S3 bucket created successfully'),
+    };
+  } catch (error) {
+    console.error('Error creating S3 bucket:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify('Error creating S3 bucket'),
+    };
+  }
+};
+------------------------------------------------------------------------------------
+import boto3
+import botocore
+import json
+
+def lambda_handler(event, context):
+    # Set the AWS region
+    region = 'your-region'  # replace with your AWS region, e.g., 'us-east-1'
+
+    # Set the S3 bucket name
+    bucket_name = 'your-bucket-name'  # replace with your desired bucket name
+
+    # Create an S3 client
+    s3 = boto3.client('s3', region_name=region)
+
+    # Configure parameters for the S3 bucket
+    bucket_params = {
+        'Bucket': bucket_name,
+        'ACL': 'private',  # You can set the access control level as needed
+    }
+
+    try:
+        # Create the S3 bucket
+        s3.create_bucket(**bucket_params)
+
+        # You can add more logic or perform additional tasks here
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('S3 bucket created successfully')
+        }
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
+            return {
+                'statusCode': 200,
+                'body':
+--------------------------------------------------------------------------------
+
+import boto3
+import json
+
+def lambda_handler(event, context):
+    # Set the AWS region
+    region = 'your-region'  # replace with your AWS region, e.g., 'us-east-1'
+
+    # Set the S3 bucket name
+    bucket_name = 'your-bucket-name'  # replace with your S3 bucket name
+
+    # Set the threshold for storage usage in bytes (e.g., 1 GB = 1073741824 bytes)
+    threshold_bytes = 1073741824  # set your desired threshold
+
+    # Create an S3 client
+    s3 = boto3.client('s3', region_name=region)
+
+    # Get the bucket size
+    response = s3.list_objects_v2(Bucket=bucket_name)
+    total_size_bytes = sum([obj['Size'] for obj in response.get('Contents', [])])
+
+    # Check if the bucket size exceeds the threshold
+    if total_size_bytes > threshold_bytes:
+        # Send a notification (replace with your preferred notification mechanism)
+        send_notification(f"S3 bucket {bucket_name} exceeded the threshold. Current size: {total_size_bytes} bytes.")
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Lambda function executed successfully')
+    }
+
+def send_notification(message):
+    # Replace this function with your own logic to send notifications
+    # This could be sending an SNS message, an email, or integrating with other notification services
+    print("Notification:", message)
+
+# Uncomment the line below if you want to test the function locally
+# print(lambda_handler(None, None))
+
+-----------------------------------------------------------------------------
+
+
+Aws Lambda Functions Troubleshooting points 
+
+General: Permission is denied / Cannot load such file
+General: Error occurs when calling the UpdateFunctionCode
+Amazon S3: Error Code PermanentRedirect.
+General: Cannot find, cannot load, unable to import, class not found, no such file or directory
+General: Undefined method handler
+Lambda: Layer conversion failed
+Lambda: InvalidParameterValueException or RequestEntityTooLargeException
+Lambda: InvalidParameterValueException
+Lambda: Concurrency and memory quotas
+
+
+--------------------------------------------------------------
